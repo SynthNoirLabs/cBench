@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cbench"
+version = "0.2.0"
+description = "Multi-provider AI Model Benchmark Suite"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.43.0",
+    "claude-agent-sdk>=0.1.0",
+    "rich>=13.0",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+google = ["google-genai>=1.0"]
+all-providers = ["openai>=1.0", "google-genai>=1.0"]
+
+[project.scripts]
+cbench = "cbench.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cbench*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.isort]
+known-first-party = ["cbench"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
