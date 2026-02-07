@@ -27,7 +27,7 @@ from cbench.tasks import get_all_tasks
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        prog="cbench", description="Claude Opus 4.6 Feature Benchmark Suite"
+        prog="cbench", description="Multi-provider AI Model Benchmark Suite"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
