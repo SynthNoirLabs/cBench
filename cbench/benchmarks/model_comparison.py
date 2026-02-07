@@ -16,13 +16,15 @@ class ModelComparisonBenchmark(Benchmark):
                 "thinking": {"type": "enabled", "budget_tokens": 8192},
             },
             {"name": "haiku_no_thinking", "model": ModelID.HAIKU_4_5},
-            # OpenAI models
-            {"name": "gpt5", "model": ModelID.GPT_5},
-            {"name": "gpt4o", "model": ModelID.GPT_4O},
-            {"name": "o3", "model": ModelID.O3},
+            # OpenAI models (all GPT-5 family — reasoning with thinking)
+            {"name": "gpt5_2", "model": ModelID.GPT_5_2},
+            {"name": "gpt5_1", "model": ModelID.GPT_5_1},
+            {"name": "gpt5_mini", "model": ModelID.GPT_5_MINI},
             # Google models
             {"name": "gemini3_pro", "model": ModelID.GEMINI_3_PRO},
             {"name": "gemini3_flash", "model": ModelID.GEMINI_3_FLASH},
+            {"name": "gemini2_5_pro", "model": ModelID.GEMINI_2_5_PRO},
+            {"name": "gemini2_5_flash", "model": ModelID.GEMINI_2_5_FLASH},
             # Open models (via OpenRouter)
             {"name": "qwen3_coder", "model": ModelID.QWEN3_CODER},
             {"name": "deepseek_v3", "model": ModelID.DEEPSEEK_V3},

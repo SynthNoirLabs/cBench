@@ -11,7 +11,7 @@ from cbench.providers.base import ProviderClient
 
 
 class OpenAIClient(ProviderClient):
-    """OpenAI API client (GPT-5, GPT-4o, o3)."""
+    """OpenAI API client (GPT-5.2, GPT-5.1, GPT-5-mini — all reasoning models)."""
 
     def __init__(self) -> None:
         try:
@@ -36,7 +36,7 @@ class OpenAIClient(ProviderClient):
         max_tokens: int = 4096,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
-        kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens)
+        kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens, effort=effort)
 
         start = time.monotonic()
         try:
@@ -60,7 +60,7 @@ class OpenAIClient(ProviderClient):
         max_tokens: int = 4096,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
-        kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens)
+        kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens, effort=effort)
         kwargs["stream"] = True
         kwargs["stream_options"] = {"include_usage": True}
 
@@ -118,12 +118,24 @@ class OpenAIClient(ProviderClient):
         oai_messages.extend(messages)
         return oai_messages
 
+    # Map cBench effort names to OpenAI reasoning_effort values
+    _EFFORT_MAP = {
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "max": "high",  # OpenAI has no "max", map to high
+        "minimal": "minimal",  # GPT-5 family only
+        "xhigh": "xhigh",  # GPT-5.2 only
+    }
+
     def _build_kwargs(
         self,
         model: ModelID,
         messages: list[dict],
         temperature: float | None,
         max_tokens: int,
+        *,
+        effort: str | None = None,
     ) -> dict:
         kwargs: dict = {
             "model": model.value,
@@ -132,6 +144,8 @@ class OpenAIClient(ProviderClient):
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
+        if effort is not None:
+            kwargs["reasoning_effort"] = self._EFFORT_MAP.get(effort, effort)
         return kwargs
 
     def _parse_response(

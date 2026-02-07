@@ -4,7 +4,7 @@ import time
 
 from cbench.benchmarks.base import Benchmark, BenchmarkResult
 from cbench.client import BenchClient, CallResult
-from cbench.config import PRICING, ModelID, is_claude_model
+from cbench.config import PRICING, ModelID, is_claude_model, is_openai_reasoning_model
 from cbench.display import get_progress
 from cbench.providers import create_client
 from cbench.providers.base import ProviderClient
@@ -64,10 +64,13 @@ class BenchmarkRunner:
                 use_streaming = benchmark.uses_streaming(variant)
                 client = self._get_client(model)
 
-                # Strip Claude-only kwargs for non-Claude models
-                if not is_claude_model(model):
+                # Strip provider-specific kwargs for models that don't support them
+                if not is_claude_model(model) and not is_openai_reasoning_model(model):
                     call_kwargs.pop("thinking", None)
                     call_kwargs.pop("effort", None)
+                elif is_openai_reasoning_model(model):
+                    # OpenAI reasoning models use effort but not Anthropic-style thinking
+                    call_kwargs.pop("thinking", None)
 
                 for task_def in tasks:
                     for run_idx in range(num_runs):

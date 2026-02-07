@@ -93,7 +93,7 @@ cbench analyze results/ --format report
 | `thinking_modes` | Thinking enabled vs disabled vs adaptive |
 | `effort_levels` | Low / medium / high effort (Claude only) |
 | `budget_sweep` | Thinking token budget scaling |
-| `model_comparison` | Cross-provider model comparison (10 models) |
+| `model_comparison` | Cross-provider model comparison (12 models) |
 | `temperature` | Temperature 0.0 / 0.5 / 1.0 |
 | `streaming` | Streaming vs non-streaming |
 | `caching` | Prompt caching on vs off |
@@ -120,9 +120,9 @@ cbench analyze results/ --format report
 | Provider | Models |
 |----------|--------|
 | Anthropic | Claude Opus 4.6, Sonnet 4.5, Haiku 4.5 |
-| OpenAI | GPT-5, GPT-4o, o3 |
-| Google | Gemini 3.0 Pro, Gemini 3.0 Flash |
-| OpenRouter | Qwen3 Coder Next, DeepSeek Chat v3 |
+| OpenAI | GPT-5.2, GPT-5.1, GPT-5 Mini (all reasoning models) |
+| Google | Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash |
+| OpenRouter | Qwen3 Coder, DeepSeek V3 |
 
 ## Metrics
 
@@ -153,4 +153,4 @@ tests/                Unit tests
 
 ## License
 
-Private.
+MIT
