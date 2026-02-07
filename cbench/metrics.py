@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from statistics import mean, stdev
+from typing import Any
 
 from cbench.config import LONG_CONTEXT_THRESHOLD, PRICING, ModelID
 
 
-def calculate_cost(model_id: ModelID, usage: dict) -> float:
+def calculate_cost(model_id: ModelID, usage: dict[str, int]) -> float:
     """Calculate the API cost for a given model and usage.
 
     Args:
@@ -50,7 +51,7 @@ def calculate_cost(model_id: ModelID, usage: dict) -> float:
     return total
 
 
-def compute_reliability_metrics(results: list[dict]) -> dict[tuple[str, str], dict]:
+def compute_reliability_metrics(results: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
     """Compute reliability metrics grouped by (variant_name, task_name).
 
     Returns a dict keyed by (variant, task) with:
@@ -62,14 +63,16 @@ def compute_reliability_metrics(results: list[dict]) -> dict[tuple[str, str], di
         - mean_cost: average cost per call
         - mean_latency: average wall-clock seconds
     """
-    groups: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
 
-    for r in results:
+    for r_item in results:
         # Support both dict and dataclass
-        if hasattr(r, "__dataclass_fields__"):
+        if hasattr(r_item, "__dataclass_fields__"):
             from dataclasses import asdict
 
-            r = asdict(r)
+            r = asdict(r_item)  # type: ignore[call-overload]
+        else:
+            r = r_item
         key = (r.get("variant_name", ""), r.get("task_name", ""))
         groups[key].append(r)
 

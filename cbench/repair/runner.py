@@ -8,9 +8,10 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from cbench.client import CallResult
-from cbench.config import PRICING, ModelID, is_claude_model
+from cbench.config import PRICING, ModelID
 from cbench.display import get_progress
 from cbench.repair.benchmark import FixtureInfo, RepairBenchmark
 from cbench.storage import save_results
@@ -73,7 +74,7 @@ def _run_agent_repair(
     fixture: FixtureInfo,
     work_dir: Path,
     model: ModelID,
-    variant: dict,
+    variant: dict[str, Any],
     max_turns: int,
 ) -> tuple[int, CallResult]:
     """Run the repair agent on a fixture copy.
@@ -128,7 +129,7 @@ def _run_agent_repair(
     total_output = 0
     total_cost = 0.0
 
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "model": model.value,
         "system": system_prompt,
         "messages": messages,
@@ -138,7 +139,7 @@ def _run_agent_repair(
         kwargs["thinking"] = variant["thinking"]
 
     turns = 0
-    for turn in range(max_turns):
+    for _turn in range(max_turns):
         turns += 1
 
         try:
@@ -297,7 +298,7 @@ class RepairRunner:
         benchmark: RepairBenchmark,
         num_runs: int,
         max_turns: int,
-    ) -> dict:
+    ) -> dict[str, Any]:
         fixtures = benchmark.get_fixtures()
         variants = benchmark.get_variants()
 

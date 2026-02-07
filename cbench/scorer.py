@@ -4,7 +4,9 @@ import json
 import re
 import string
 import subprocess
+from typing import Any
 
+from cbench.client import CallResult
 from cbench.tasks.base import ScoringMethod, TaskDefinition
 
 
@@ -57,18 +59,18 @@ def _score_code_execution(task_def: TaskDefinition, response_text: str) -> float
             # Build the test invocation based on input type
             if isinstance(test_input, dict):
                 # Keyword arguments: merge_sorted(a=[1,3,5], b=[2,4,6])
-                args_str = ", ".join(f"{k}={repr(v)}" for k, v in test_input.items())
+                args_str = ", ".join(f"{k}={v!r}" for k, v in test_input.items())
                 # Find the function name from the code
                 func_name = _extract_func_name(code)
                 script = f"{code}\n\nprint(repr({func_name}({args_str})))"
             elif isinstance(test_input, str):
                 # String input
                 func_name = _extract_func_name(code)
-                script = f"{code}\n\nprint(repr({func_name}({repr(test_input)})))"
+                script = f"{code}\n\nprint(repr({func_name}({test_input!r})))"
             else:
                 # List/positional input (original format)
                 func_name = _extract_func_name(code)
-                script = f"{code}\n\nprint(repr({func_name}({repr(test_input)})))"
+                script = f"{code}\n\nprint(repr({func_name}({test_input!r})))"
 
             result = subprocess.run(
                 ["python3", "-c", script],
@@ -100,7 +102,7 @@ def _score_llm_judge(task_def: TaskDefinition, response_text: str) -> float:
     try:
         import anthropic
 
-        from cbench.config import PRICING, ModelID
+        from cbench.config import ModelID
     except ImportError:
         return 0.0
 
@@ -155,32 +157,48 @@ def _score_llm_judge(task_def: TaskDefinition, response_text: str) -> float:
     return sum(normalized) / len(normalized) if normalized else 0.0
 
 
-def _parse_judge_scores(text: str) -> dict | None:
+def _parse_judge_scores(text: str) -> dict[str, Any] | None:
     """Parse JSON scores from judge response."""
     # Try direct parse
     try:
-        return json.loads(text.strip())
+        result: dict[str, Any] = json.loads(text.strip())
+        return result
     except (json.JSONDecodeError, ValueError):
         pass
 
     # Try extracting from markdown code blocks
     for match in re.finditer(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL):
         try:
-            return json.loads(match.group(1).strip())
+            result = json.loads(match.group(1).strip())
+            return result
         except (json.JSONDecodeError, ValueError):
             continue
 
     # Try bare braces
     for match in re.finditer(r"\{[^{}]*\}", text, re.DOTALL):
         try:
-            return json.loads(match.group(0))
+            result = json.loads(match.group(0))
+            return result
         except (json.JSONDecodeError, ValueError):
             continue
 
     return None
 
 
-def score_response(task_def: TaskDefinition, response_text: str) -> float:
+def _score_tool_match(task_def: TaskDefinition, call_result: CallResult | None) -> float:
+    """Score based on whether the model called the correct tool."""
+    if not call_result or not call_result.tool_calls:
+        return 0.0
+    expected_tool = task_def.expected_answer
+    actual_tool = call_result.tool_calls[0]["name"]
+    return 1.0 if actual_tool == expected_tool else 0.0
+
+
+def score_response(
+    task_def: TaskDefinition,
+    response_text: str,
+    call_result: CallResult | None = None,
+) -> float:
     """Score a model response against a task definition.
 
     Returns a float between 0.0 and 1.0.
@@ -197,6 +215,9 @@ def score_response(task_def: TaskDefinition, response_text: str) -> float:
 
         if task_def.scoring_method == ScoringMethod.LLM_JUDGE:
             return _score_llm_judge(task_def, response_text)
+
+        if task_def.scoring_method == ScoringMethod.TOOL_MATCH:
+            return _score_tool_match(task_def, call_result)
 
         return 0.0
     except Exception:

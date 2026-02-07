@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, ClassVar
+
 from cbench.config import ModelID
 
 
@@ -11,7 +13,7 @@ class ReviewBenchmark:
     name = "repo_review"
     description = "Multi-turn repo review with LLM-as-Judge scoring"
 
-    DEFAULT_VARIANTS = [
+    DEFAULT_VARIANTS: ClassVar[list[dict[str, Any]]] = [
         # Raw API variants (hand-rolled agent loop with anthropic SDK)
         {
             "name": "opus_adaptive",
@@ -79,8 +81,8 @@ class ReviewBenchmark:
         },
     ]
 
-    def __init__(self, variants: list[dict] | None = None) -> None:
+    def __init__(self, variants: list[dict[str, Any]] | None = None) -> None:
         self.variants = variants or self.DEFAULT_VARIANTS
 
-    def get_variants(self) -> list[dict]:
-        return self.variants
+    def get_variants(self) -> list[dict[str, Any]]:
+        return list(self.variants)

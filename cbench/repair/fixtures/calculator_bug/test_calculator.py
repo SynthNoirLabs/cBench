@@ -1,6 +1,6 @@
 """Tests for the calculator module."""
 
-from calculator import add, subtract, multiply, divide, factorial, power
+from calculator import add, divide, factorial, multiply, power, subtract
 
 
 def test_add():

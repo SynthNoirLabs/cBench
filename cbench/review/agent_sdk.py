@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from cbench.config import ModelID
 from cbench.review.agent import AgentMetrics, AgentResult
@@ -45,7 +46,7 @@ class SDKAgentLoop:
         repo_path: Path,
         max_turns: int = 30,
         max_tokens: int = 16384,
-        thinking: dict | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
     ) -> None:
         self.model = model

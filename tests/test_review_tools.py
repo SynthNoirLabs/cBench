@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from cbench.review.tools import (
@@ -14,7 +16,7 @@ from cbench.review.tools import (
 
 
 @pytest.fixture
-def tmp_repo(tmp_path):
+def tmp_repo(tmp_path: Path) -> Path:
     """Create a minimal temp repo structure."""
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "main.py").write_text("def hello():\n    print('hello')\n")
@@ -27,7 +29,7 @@ def tmp_repo(tmp_path):
 
 
 @pytest.fixture
-def sandbox(tmp_repo):
+def sandbox(tmp_repo: Path) -> RepoSandbox:
     return RepoSandbox(tmp_repo)
 
 
@@ -35,24 +37,24 @@ def sandbox(tmp_repo):
 
 
 class TestRepoSandbox:
-    def test_resolve_valid_path(self, sandbox, tmp_repo):
+    def test_resolve_valid_path(self, sandbox: RepoSandbox, tmp_repo: Path) -> None:
         resolved = sandbox.resolve("src/main.py")
         assert resolved == tmp_repo / "src" / "main.py"
 
-    def test_resolve_root(self, sandbox, tmp_repo):
+    def test_resolve_root(self, sandbox: RepoSandbox, tmp_repo: Path) -> None:
         resolved = sandbox.resolve(".")
         assert resolved == tmp_repo
 
-    def test_resolve_blocks_traversal(self, sandbox):
+    def test_resolve_blocks_traversal(self, sandbox: RepoSandbox) -> None:
         with pytest.raises(PermissionError, match="escapes sandbox"):
             sandbox.resolve("../../etc/passwd")
 
-    def test_resolve_blocks_absolute_path_traversal(self, sandbox):
+    def test_resolve_blocks_absolute_path_traversal(self, sandbox: RepoSandbox) -> None:
         # Absolute paths get joined but resolve may escape
         with pytest.raises(PermissionError, match="escapes sandbox"):
             sandbox.resolve("../../../tmp")
 
-    def test_resolve_blocks_symlink_escape(self, sandbox, tmp_repo):
+    def test_resolve_blocks_symlink_escape(self, sandbox: RepoSandbox, tmp_repo: Path) -> None:
         # Create a symlink pointing outside the sandbox
         outside_dir = tmp_repo.parent / "outside"
         outside_dir.mkdir(exist_ok=True)
@@ -62,17 +64,17 @@ class TestRepoSandbox:
         with pytest.raises(PermissionError, match="escapes sandbox"):
             sandbox.resolve("evil_link")
 
-    def test_resolve_allows_internal_symlink(self, sandbox, tmp_repo):
+    def test_resolve_allows_internal_symlink(self, sandbox: RepoSandbox, tmp_repo: Path) -> None:
         link = tmp_repo / "src_link"
         link.symlink_to(tmp_repo / "src")
         resolved = sandbox.resolve("src_link/main.py")
         assert resolved.is_file()
 
-    def test_init_nonexistent_dir_raises(self, tmp_path):
+    def test_init_nonexistent_dir_raises(self, tmp_path: Path) -> None:
         with pytest.raises(ValueError, match="not a directory"):
             RepoSandbox(tmp_path / "nonexistent")
 
-    def test_prefix_collision_blocked(self, tmp_path):
+    def test_prefix_collision_blocked(self, tmp_path: Path) -> None:
         """Regression: /tmp/sandbox vs /tmp/sandbox-evil must be blocked."""
         real_dir = tmp_path / "sandbox"
         real_dir.mkdir()
@@ -89,24 +91,24 @@ class TestRepoSandbox:
 
 
 class TestListDirectory:
-    def test_list_root(self, sandbox):
+    def test_list_root(self, sandbox: RepoSandbox) -> None:
         result = execute_list_directory(sandbox, ".")
         assert "README.md" in result
         assert "src/" in result
 
-    def test_skips_hidden_dirs(self, sandbox):
+    def test_skips_hidden_dirs(self, sandbox: RepoSandbox) -> None:
         result = execute_list_directory(sandbox, ".")
         assert ".git" not in result
 
-    def test_list_subdirectory(self, sandbox):
+    def test_list_subdirectory(self, sandbox: RepoSandbox) -> None:
         result = execute_list_directory(sandbox, "src")
         assert "main.py" in result
 
-    def test_list_nonexistent(self, sandbox):
+    def test_list_nonexistent(self, sandbox: RepoSandbox) -> None:
         result = execute_list_directory(sandbox, "nonexistent")
         assert "Error" in result
 
-    def test_list_file_not_dir(self, sandbox):
+    def test_list_file_not_dir(self, sandbox: RepoSandbox) -> None:
         result = execute_list_directory(sandbox, "README.md")
         assert "Error" in result
 
@@ -115,25 +117,25 @@ class TestListDirectory:
 
 
 class TestReadFile:
-    def test_read_whole_file(self, sandbox):
+    def test_read_whole_file(self, sandbox: RepoSandbox) -> None:
         result = execute_read_file(sandbox, "src/main.py")
         assert "def hello():" in result
         assert "File: src/main.py" in result
 
-    def test_read_with_offset(self, sandbox):
+    def test_read_with_offset(self, sandbox: RepoSandbox) -> None:
         result = execute_read_file(sandbox, "data/input.txt", offset=3, limit=2)
         assert "line3" in result
         assert "line1" not in result
 
-    def test_read_nonexistent(self, sandbox):
+    def test_read_nonexistent(self, sandbox: RepoSandbox) -> None:
         result = execute_read_file(sandbox, "no_such_file.py")
         assert "Error" in result
 
-    def test_read_directory(self, sandbox):
+    def test_read_directory(self, sandbox: RepoSandbox) -> None:
         result = execute_read_file(sandbox, "src")
         assert "Error" in result
 
-    def test_line_numbers(self, sandbox):
+    def test_line_numbers(self, sandbox: RepoSandbox) -> None:
         result = execute_read_file(sandbox, "data/input.txt")
         assert "    1 | line1" in result
         assert "    5 | line5" in result
@@ -143,32 +145,32 @@ class TestReadFile:
 
 
 class TestSearchCode:
-    def test_search_finds_match(self, sandbox):
+    def test_search_finds_match(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "def hello")
         assert "src/main.py" in result
         assert "def hello" in result
 
-    def test_search_no_match(self, sandbox):
+    def test_search_no_match(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "zzz_no_match_zzz")
         assert "No matches found" in result
 
-    def test_search_with_file_glob(self, sandbox):
+    def test_search_with_file_glob(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "line", file_glob="*.txt")
         assert "input.txt" in result
 
-    def test_search_in_subdirectory(self, sandbox):
+    def test_search_in_subdirectory(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "print", path="src")
         assert "main.py" in result
 
-    def test_search_invalid_regex(self, sandbox):
+    def test_search_invalid_regex(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "[invalid")
         assert "Error: invalid regex" in result
 
-    def test_search_pattern_too_long(self, sandbox):
+    def test_search_pattern_too_long(self, sandbox: RepoSandbox) -> None:
         result = execute_search_code(sandbox, "a" * 201)
         assert "Error: pattern too long" in result
 
-    def test_search_respects_max_results(self, sandbox, tmp_repo):
+    def test_search_respects_max_results(self, sandbox: RepoSandbox, tmp_repo: Path) -> None:
         # Create a file with many matching lines
         many_lines = "\n".join(f"match_{i}" for i in range(100))
         (tmp_repo / "big.txt").write_text(many_lines)
@@ -180,22 +182,22 @@ class TestSearchCode:
 
 
 class TestDispatchTool:
-    def test_dispatch_list_directory(self, sandbox):
+    def test_dispatch_list_directory(self, sandbox: RepoSandbox) -> None:
         result = dispatch_tool(sandbox, "list_directory", {"path": "."})
         assert "src/" in result
 
-    def test_dispatch_read_file(self, sandbox):
+    def test_dispatch_read_file(self, sandbox: RepoSandbox) -> None:
         result = dispatch_tool(sandbox, "read_file", {"path": "README.md"})
         assert "Test Repo" in result
 
-    def test_dispatch_search_code(self, sandbox):
+    def test_dispatch_search_code(self, sandbox: RepoSandbox) -> None:
         result = dispatch_tool(sandbox, "search_code", {"pattern": "hello"})
         assert "main.py" in result
 
-    def test_dispatch_unknown_tool(self, sandbox):
+    def test_dispatch_unknown_tool(self, sandbox: RepoSandbox) -> None:
         result = dispatch_tool(sandbox, "unknown_tool", {})
         assert "Error: unknown tool" in result
 
-    def test_dispatch_traversal_blocked(self, sandbox):
+    def test_dispatch_traversal_blocked(self, sandbox: RepoSandbox) -> None:
         result = dispatch_tool(sandbox, "read_file", {"path": "../../etc/passwd"})
         assert "Error" in result

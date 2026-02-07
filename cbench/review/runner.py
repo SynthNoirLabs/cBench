@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import anthropic
 
@@ -148,7 +149,7 @@ class ReviewRunner:
         save_results(benchmark.name, results, self.output_dir)
         return results
 
-    def _create_agent(self, variant: dict, sandbox: RepoSandbox, repo_path, max_turns: int):
+    def _create_agent(self, variant: dict[str, Any], sandbox: RepoSandbox, repo_path: Path, max_turns: int) -> AgentLoop | Any:
         """Factory: dispatch to raw API or SDK agent based on variant config."""
         agent_type = variant.get("agent_type", "raw_api")
         if agent_type == "sdk":
@@ -178,7 +179,7 @@ class ReviewRunner:
         repo_path: str | Path,
         num_runs: int = 1,
         max_turns: int = 30,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Repo-aware cost estimate: scans file count and LOC to calibrate."""
         repo_stats = scan_repo(repo_path)
         variants = benchmark.get_variants()
@@ -192,7 +193,7 @@ class ReviewRunner:
         judge_output = 500
 
         total_cost = 0.0
-        details: list[dict] = []
+        details: list[dict[str, Any]] = []
 
         for variant in variants:
             model = variant["model"]

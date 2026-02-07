@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 SKIP_DIRS = {
     ".git",
@@ -193,7 +194,7 @@ def execute_search_code(
     return f"Found {len(results)} matches:\n" + "\n".join(results)
 
 
-def dispatch_tool(sandbox: RepoSandbox, tool_name: str, tool_input: dict) -> str:
+def dispatch_tool(sandbox: RepoSandbox, tool_name: str, tool_input: dict[str, Any]) -> str:
     """Route a tool call to the correct execution function. Returns result string."""
     try:
         if tool_name == "list_directory":

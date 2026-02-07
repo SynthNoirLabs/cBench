@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from statistics import mean, stdev
+from typing import Any
 
 from rich.panel import Panel
 from rich.table import Table
@@ -11,7 +12,7 @@ from rich.table import Table
 from cbench.display import console
 
 
-def print_review_results_table(results: list) -> None:
+def print_review_results_table(results: list[Any]) -> None:
     """Print a Rich table summarizing review benchmark results."""
     table = Table(title="Repo Review Results", show_lines=True)
     table.add_column("Variant", style="cyan")
@@ -113,7 +114,7 @@ def print_review_results_table(results: list) -> None:
     console.print(table)
 
 
-def print_review_summary_table(results: list) -> None:
+def print_review_summary_table(results: list[Any]) -> None:
     """Print aggregated summary table for review results when num_runs > 1."""
     rows = []
     for r in results:
@@ -164,7 +165,7 @@ def print_review_summary_table(results: list) -> None:
     console.print(table)
 
 
-def print_review_cost_estimate(estimate: dict) -> None:
+def print_review_cost_estimate(estimate: dict[str, Any]) -> None:
     """Print a Rich panel with review cost estimate details."""
     repo = estimate.get("repo_stats", {})
     size_cat = repo.get("size_category", "unknown")

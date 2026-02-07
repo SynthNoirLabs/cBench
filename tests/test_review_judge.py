@@ -14,12 +14,12 @@ class FakeClient:
 
 
 @pytest.fixture
-def scorer():
-    return JudgeScorer(FakeClient())
+def scorer() -> JudgeScorer:
+    return JudgeScorer(FakeClient())  # type: ignore[arg-type]
 
 
 class TestParseScores:
-    def test_parse_valid_json(self, scorer):
+    def test_parse_valid_json(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 4, "accuracy": 5, "depth": 3, "actionability": 4, "prioritization": 3, "reasoning": "Good review."}'
         scores = scorer._parse_scores(text)
         assert scores.raw_scores["completeness"] == 4
@@ -29,36 +29,36 @@ class TestParseScores:
         assert scores.depth == 0.5  # (3-1)/4
         assert scores.judge_reasoning == "Good review."
 
-    def test_parse_json_in_code_fence(self, scorer):
+    def test_parse_json_in_code_fence(self, scorer: JudgeScorer) -> None:
         text = 'Here is my assessment:\n```json\n{"completeness": 3, "accuracy": 3, "depth": 3, "actionability": 3, "prioritization": 3, "reasoning": "Average."}\n```'
         scores = scorer._parse_scores(text)
         assert scores.raw_scores["completeness"] == 3
         assert scores.composite_score == 0.5  # All 3s -> (3-1)/4 = 0.5
 
-    def test_parse_json_in_bare_fence(self, scorer):
+    def test_parse_json_in_bare_fence(self, scorer: JudgeScorer) -> None:
         text = '```\n{"completeness": 5, "accuracy": 5, "depth": 5, "actionability": 5, "prioritization": 5, "reasoning": "Perfect."}\n```'
         scores = scorer._parse_scores(text)
         assert scores.composite_score == 1.0
 
-    def test_parse_invalid_json(self, scorer):
+    def test_parse_invalid_json(self, scorer: JudgeScorer) -> None:
         scores = scorer._parse_scores("This is not JSON at all.")
         assert scores.composite_score == 0.0
         assert "Failed to parse" in scores.judge_reasoning
 
-    def test_parse_missing_dimension(self, scorer):
+    def test_parse_missing_dimension(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 4, "accuracy": 5, "depth": 3}'
         scores = scorer._parse_scores(text)
         # Should fail because actionability and prioritization are missing
         assert scores.composite_score == 0.0
         assert "Failed to parse" in scores.judge_reasoning
 
-    def test_parse_out_of_range(self, scorer):
+    def test_parse_out_of_range(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 6, "accuracy": 5, "depth": 3, "actionability": 4, "prioritization": 3, "reasoning": "Bad."}'
         scores = scorer._parse_scores(text)
         assert scores.composite_score == 0.0
         assert "Failed to parse" in scores.judge_reasoning
 
-    def test_parse_zero_score(self, scorer):
+    def test_parse_zero_score(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 0, "accuracy": 5, "depth": 3, "actionability": 4, "prioritization": 3, "reasoning": "Bad."}'
         scores = scorer._parse_scores(text)
         assert scores.composite_score == 0.0
@@ -66,21 +66,21 @@ class TestParseScores:
 
 
 class TestCompositeScore:
-    def test_all_fives_gives_one(self, scorer):
+    def test_all_fives_gives_one(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 5, "accuracy": 5, "depth": 5, "actionability": 5, "prioritization": 5, "reasoning": "Perfect."}'
         scores = scorer._parse_scores(text)
         assert scores.composite_score == pytest.approx(1.0)
 
-    def test_all_ones_gives_zero(self, scorer):
+    def test_all_ones_gives_zero(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 1, "accuracy": 1, "depth": 1, "actionability": 1, "prioritization": 1, "reasoning": "Bad."}'
         scores = scorer._parse_scores(text)
         assert scores.composite_score == pytest.approx(0.0)
 
-    def test_weights_sum_to_one(self):
+    def test_weights_sum_to_one(self) -> None:
         total = sum(DIMENSION_WEIGHTS.values())
         assert total == pytest.approx(1.0)
 
-    def test_weighted_average(self, scorer):
+    def test_weighted_average(self, scorer: JudgeScorer) -> None:
         text = '{"completeness": 3, "accuracy": 5, "depth": 1, "actionability": 3, "prioritization": 3, "reasoning": "Mixed."}'
         scores = scorer._parse_scores(text)
         # Manual: compl=0.5*0.20, accur=1.0*0.25, depth=0.0*0.25, action=0.5*0.15, prior=0.5*0.15
@@ -89,16 +89,16 @@ class TestCompositeScore:
 
 
 class TestExtractJsonBlocks:
-    def test_extracts_from_code_fence(self, scorer):
+    def test_extracts_from_code_fence(self, scorer: JudgeScorer) -> None:
         text = 'Some text\n```json\n{"key": 1}\n```\nMore text'
         blocks = scorer._extract_json_blocks(text)
         assert any('{"key": 1}' in b for b in blocks)
 
-    def test_extracts_bare_braces(self, scorer):
+    def test_extracts_bare_braces(self, scorer: JudgeScorer) -> None:
         text = 'Result: {"a": 1}'
         blocks = scorer._extract_json_blocks(text)
         assert '{"a": 1}' in blocks
 
-    def test_no_json(self, scorer):
+    def test_no_json(self, scorer: JudgeScorer) -> None:
         blocks = scorer._extract_json_blocks("No JSON here.")
         assert blocks == []

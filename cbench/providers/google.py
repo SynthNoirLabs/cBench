@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from cbench.client import CallResult
 from cbench.config import ModelID
@@ -18,25 +19,26 @@ class GoogleClient(ProviderClient):
             from google import genai
 
             self.client = genai.Client()
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "google-genai package required for Gemini models. "
                 "Install with: pip install 'cbench[google]' or pip install google-genai"
-            )
+            ) from err
 
     def call_sync(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
-        from google.genai import types
-
         contents = self._build_contents(messages)
         config = self._build_config(system, temperature, max_tokens)
 
@@ -57,22 +59,23 @@ class GoogleClient(ProviderClient):
     def call_streaming(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
-        from google.genai import types
-
         contents = self._build_contents(messages)
         config = self._build_config(system, temperature, max_tokens)
 
-        text_parts = []
-        ttfb = None
-        last_response = None
+        text_parts: list[str] = []
+        ttfb: float | None = None
+        last_response: Any = None
         start = time.monotonic()
 
         try:
@@ -115,9 +118,9 @@ class GoogleClient(ProviderClient):
             cost_usd=cost,
         )
 
-    def _build_contents(self, messages: list[dict]) -> list[dict]:
+    def _build_contents(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Convert standard messages to Gemini format."""
-        contents = []
+        contents: list[dict[str, Any]] = []
         for msg in messages:
             role = "user" if msg["role"] == "user" else "model"
             contents.append({"role": role, "parts": [{"text": msg["content"]}]})
@@ -125,20 +128,20 @@ class GoogleClient(ProviderClient):
 
     def _build_config(
         self,
-        system: str | list[dict] | None,
+        system: str | list[dict[str, Any]] | None,
         temperature: float | None,
         max_tokens: int,
-    ) -> dict:
+    ) -> Any:
         from google.genai import types
 
-        config: dict = {"max_output_tokens": max_tokens}
+        config: dict[str, Any] = {"max_output_tokens": max_tokens}
 
         if system is not None:
             if isinstance(system, str):
                 config["system_instruction"] = system
-            elif isinstance(system, list):
+            else:
                 text = " ".join(
-                    b["text"] for b in system if isinstance(b, dict) and "text" in b
+                    b["text"] for b in system if "text" in b
                 )
                 if text:
                     config["system_instruction"] = text
@@ -149,7 +152,7 @@ class GoogleClient(ProviderClient):
         return types.GenerateContentConfig(**config)
 
     def _parse_response(
-        self, response, model: ModelID, elapsed: float
+        self, response: Any, model: ModelID, elapsed: float
     ) -> CallResult:
         response_text = response.text or ""
 

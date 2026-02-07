@@ -1,12 +1,12 @@
-"""Repair benchmark: model × agent_type variants over fixture repos."""
+"""Repair benchmark: model x agent_type variants over fixture repos."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from cbench.config import ModelID
-
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -51,7 +51,7 @@ class RepairBenchmark:
     def __init__(
         self,
         fixture_names: list[str] | None = None,
-        variants: list[dict] | None = None,
+        variants: list[dict[str, Any]] | None = None,
     ) -> None:
         self._fixture_names = fixture_names or ALL_FIXTURE_NAMES
         self._variants = variants
@@ -74,7 +74,7 @@ class RepairBenchmark:
                 )
         return fixtures
 
-    def get_variants(self) -> list[dict]:
+    def get_variants(self) -> list[dict[str, Any]]:
         if self._variants:
             return self._variants
         return [

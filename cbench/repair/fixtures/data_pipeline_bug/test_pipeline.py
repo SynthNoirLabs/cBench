@@ -1,7 +1,12 @@
 """Tests for the data pipeline."""
 
-from pipeline import Record, parse_csv, filter_records, aggregate_by_category, deduplicate, transform_pipeline
-
+from pipeline import (
+    aggregate_by_category,
+    deduplicate,
+    filter_records,
+    parse_csv,
+    transform_pipeline,
+)
 
 SAMPLE_CSV = """id,name,value,category,tags
 1,Alice,100.0,A,tag1,tag2

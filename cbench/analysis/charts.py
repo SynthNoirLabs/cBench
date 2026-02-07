@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def generate_charts(results: list[dict], output_path: str | Path) -> Path:
+def generate_charts(results: list[dict[str, Any]], output_path: str | Path) -> Path:
     output_dir = Path(output_path)
     if output_dir.is_file():
         output_dir = output_dir.parent
@@ -25,7 +26,7 @@ def generate_charts(results: list[dict], output_path: str | Path) -> Path:
     return charts_dir
 
 
-def _score_by_variant(results: list[dict], output_dir: Path) -> None:
+def _score_by_variant(results: list[dict[str, Any]], output_dir: Path) -> None:
     scores = defaultdict(list)
     for r in results:
         scores[r.get("variant_name", "unknown")].append(r.get("score", 0))
@@ -38,7 +39,7 @@ def _score_by_variant(results: list[dict], output_dir: Path) -> None:
     stds = [np.std(v) for v in scores.values()]
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    bars = ax.bar(variants, means, yerr=stds, capsize=5, color="steelblue", alpha=0.8)
+    _bars = ax.bar(variants, means, yerr=stds, capsize=5, color="steelblue", alpha=0.8)
     ax.set_ylabel("Score (0-1)")
     ax.set_title("Average Score by Variant")
     ax.set_ylim(0, 1.1)
@@ -48,7 +49,7 @@ def _score_by_variant(results: list[dict], output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _cost_vs_score(results: list[dict], output_dir: Path) -> None:
+def _cost_vs_score(results: list[dict[str, Any]], output_dir: Path) -> None:
     costs = defaultdict(list)
     scores = defaultdict(list)
     for r in results:
@@ -74,7 +75,7 @@ def _cost_vs_score(results: list[dict], output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _latency_by_variant(results: list[dict], output_dir: Path) -> None:
+def _latency_by_variant(results: list[dict[str, Any]], output_dir: Path) -> None:
     latencies = defaultdict(list)
     for r in results:
         call = r.get("call_result", {})
@@ -96,7 +97,7 @@ def _latency_by_variant(results: list[dict], output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _tokens_by_variant(results: list[dict], output_dir: Path) -> None:
+def _tokens_by_variant(results: list[dict[str, Any]], output_dir: Path) -> None:
     input_tok = defaultdict(list)
     output_tok = defaultdict(list)
     for r in results:

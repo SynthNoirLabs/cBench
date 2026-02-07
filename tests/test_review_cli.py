@@ -2,26 +2,28 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from cbench.cli import main
 
 
 class TestReviewCLIParsing:
-    def test_review_dry_run(self, capsys, tmp_path):
+    def test_review_dry_run(self, capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
         """--dry-run should show cost estimate and exit without API calls."""
         (tmp_path / "README.md").write_text("# Test")
         main(["review", str(tmp_path), "--dry-run"])
         captured = capsys.readouterr()
         assert "Dry run complete" in captured.out
 
-    def test_review_unknown_variant(self, tmp_path):
+    def test_review_unknown_variant(self, tmp_path: Path) -> None:
         """Unknown variant should produce an error and exit."""
         (tmp_path / "README.md").write_text("# Test")
         with pytest.raises(SystemExit):
             main(["review", str(tmp_path), "--dry-run", "--variants", "nonexistent_variant"])
 
-    def test_review_valid_variant_filter(self, capsys, tmp_path):
+    def test_review_valid_variant_filter(self, capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
         """Valid --variants should filter to just that variant."""
         (tmp_path / "README.md").write_text("# Test")
         main(["review", str(tmp_path), "--dry-run", "--variants", "haiku_no_thinking"])
@@ -31,7 +33,7 @@ class TestReviewCLIParsing:
         # Should NOT have other variants
         assert "opus_adap" not in captured.out
 
-    def test_review_nonexistent_path(self, tmp_path):
+    def test_review_nonexistent_path(self, tmp_path: Path) -> None:
         """Non-existent path should produce an error."""
         with pytest.raises(SystemExit):
             main(["review", str(tmp_path / "no_such_dir"), "--dry-run"])

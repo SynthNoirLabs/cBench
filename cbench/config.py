@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class Provider(str, Enum):
+class Provider(StrEnum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GOOGLE = "google"
     OPENROUTER = "openrouter"
 
 
-class ModelID(str, Enum):
+class ModelID(StrEnum):
     # Claude (Anthropic)
     OPUS_4_6 = "claude-opus-4-6"
     SONNET_4_5 = "claude-sonnet-4-5-20250929"
@@ -46,7 +48,13 @@ PROVIDER_MAP: dict[ModelID, Provider] = {
 
 LONG_CONTEXT_THRESHOLD = 200_000
 
-PRICING: dict[ModelID, dict] = {
+# Anthropic beta feature headers
+BETA_TOOL_SEARCH = "tool-search-2025-04-15"
+BETA_PROGRAMMATIC_TOOLS = "advanced-tool-use-2025-11-20"
+BETA_COMPACTION = "compact-2026-01-12"
+BETA_EXTENDED_OUTPUT = "output-128k-2025-02-19"
+
+PRICING: dict[ModelID, dict[str, float]] = {
     # Anthropic
     ModelID.OPUS_4_6: {
         "input_per_mtok": 5.00,

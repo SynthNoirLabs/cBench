@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 import anthropic
 
@@ -67,7 +68,7 @@ class AgentResult:
     review_text: str = ""
     thinking_text: str = ""
     metrics: AgentMetrics = field(default_factory=AgentMetrics)
-    conversation_history: list[dict] = field(default_factory=list)
+    conversation_history: list[dict[str, Any]] = field(default_factory=list)
     error: str | None = None
 
 
@@ -79,7 +80,7 @@ class AgentLoop:
         client: anthropic.Anthropic,
         sandbox: RepoSandbox,
         model: ModelID,
-        thinking: dict | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         max_tokens: int = 16384,
         max_turns: int = 30,
@@ -94,7 +95,7 @@ class AgentLoop:
 
     def run(self) -> AgentResult:
         metrics = AgentMetrics()
-        messages: list[dict] = [
+        messages: list[dict[str, Any]] = [
             {"role": "user", "content": "Please review this repository."},
         ]
         review_parts: list[str] = []
@@ -103,7 +104,7 @@ class AgentLoop:
         last_request_time = 0.0
         last_input_tokens = 0
 
-        for turn in range(self.max_turns):
+        for _turn in range(self.max_turns):
             # Compress old tool results if context is getting large
             self._compress_old_results(messages)
 
@@ -220,8 +221,8 @@ class AgentLoop:
             conversation_history=messages,
         )
 
-    def _build_kwargs(self, messages: list[dict]) -> dict:
-        kwargs: dict = {
+    def _build_kwargs(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
             "model": self.model.value,
             "messages": messages,
             "system": [
@@ -240,7 +241,7 @@ class AgentLoop:
             kwargs["output_config"] = {"effort": self.effort}
         return kwargs
 
-    def _calculate_turn_cost(self, usage) -> float:
+    def _calculate_turn_cost(self, usage: Any) -> float:
         pricing = PRICING[self.model]
         input_cost = (usage.input_tokens / 1_000_000) * pricing["input_per_mtok"]
         output_cost = (usage.output_tokens / 1_000_000) * pricing["output_per_mtok"]
@@ -254,9 +255,9 @@ class AgentLoop:
         cache_read_cost = (
             (cache_read / 1_000_000) * pricing["input_per_mtok"] * pricing["cache_read_multiplier"]
         )
-        return input_cost + output_cost + cache_write_cost + cache_read_cost
+        return float(input_cost + output_cost + cache_write_cost + cache_read_cost)
 
-    def _compress_old_results(self, messages: list[dict]) -> None:
+    def _compress_old_results(self, messages: list[dict[str, Any]]) -> None:
         """In-place compression: replace old tool result contents with short summaries.
 
         When estimated context tokens exceed MAX_CONTEXT_TOKENS, this replaces the
@@ -270,11 +271,10 @@ class AgentLoop:
         # Find indices of user messages that contain tool_results
         result_indices = []
         for i, msg in enumerate(messages):
-            if msg["role"] == "user" and isinstance(msg.get("content"), list):
-                if any(
-                    isinstance(b, dict) and b.get("type") == "tool_result" for b in msg["content"]
-                ):
-                    result_indices.append(i)
+            if msg["role"] == "user" and isinstance(msg.get("content"), list) and any(
+                isinstance(b, dict) and b.get("type") == "tool_result" for b in msg["content"]
+            ):
+                result_indices.append(i)
 
         if len(result_indices) <= KEEP_RECENT_RESULTS:
             return  # Not enough history to compress
@@ -323,7 +323,7 @@ def _truncate_tool_result(text: str, max_chars: int) -> str:
     return text[:max_chars] + f"\n... [truncated, {len(text)} total chars]"
 
 
-def _estimate_message_tokens(messages: list[dict]) -> int:
+def _estimate_message_tokens(messages: list[dict[str, Any]]) -> int:
     """Rough token estimate from message content (~4 chars per token)."""
     total_chars = 0
     for msg in messages:

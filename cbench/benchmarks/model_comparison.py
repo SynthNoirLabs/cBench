@@ -1,3 +1,5 @@
+from typing import Any
+
 from cbench.benchmarks.base import Benchmark
 from cbench.config import ModelID
 
@@ -6,7 +8,7 @@ class ModelComparisonBenchmark(Benchmark):
     name = "model_comparison"
     description = "Compare Claude, GPT, Gemini, and open models"
 
-    def get_variants(self) -> list[dict]:
+    def get_variants(self) -> list[dict[str, Any]]:
         return [
             # Claude models
             {"name": "opus_adaptive", "model": ModelID.OPUS_4_6, "thinking": {"type": "adaptive"}},
@@ -30,8 +32,8 @@ class ModelComparisonBenchmark(Benchmark):
             {"name": "deepseek_v3", "model": ModelID.DEEPSEEK_V3},
         ]
 
-    def build_call_kwargs(self, variant: dict) -> dict:
-        kwargs = {}
+    def build_call_kwargs(self, variant: dict[str, Any]) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {}
         if "thinking" in variant:
             kwargs["thinking"] = variant["thinking"]
         return kwargs

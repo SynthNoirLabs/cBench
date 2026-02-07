@@ -5,9 +5,10 @@ import json
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 
-def save_results(benchmark_name: str, results: list, output_dir: str = "results") -> Path:
+def save_results(benchmark_name: str, results: list[Any], output_dir: str = "results") -> Path:
     """Save results to JSON and CSV in results/{benchmark_name}/{timestamp}/."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     result_dir = Path(output_dir) / benchmark_name / timestamp
@@ -39,16 +40,17 @@ def save_results(benchmark_name: str, results: list, output_dir: str = "results"
     return result_dir
 
 
-def load_results(path: str | Path) -> list[dict]:
+def load_results(path: str | Path) -> list[dict[str, Any]]:
     """Load results from a JSON file or directory containing results.json."""
     p = Path(path)
     if p.is_dir():
         p = p / "results.json"
     with open(p) as f:
-        return json.load(f)
+        result: list[dict[str, Any]] = json.load(f)
+        return result
 
 
-def _make_serializable(obj):
+def _make_serializable(obj: Any) -> Any:
     if isinstance(obj, dict):
         return {k: _make_serializable(v) for k, v in obj.items()}
     if isinstance(obj, list):
@@ -64,7 +66,7 @@ def _make_serializable(obj):
     return obj
 
 
-def _flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
+def _flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, Any]:
     items = {}
     for k, v in d.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k

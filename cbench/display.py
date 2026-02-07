@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from statistics import mean, stdev
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -29,7 +30,7 @@ def get_progress() -> Progress:
     )
 
 
-def print_results_table(results: list) -> None:
+def print_results_table(results: list[Any]) -> None:
     table = Table(title="Benchmark Results", show_lines=True)
     table.add_column("Variant", style="cyan")
     table.add_column("Task", style="green")
@@ -79,7 +80,7 @@ def print_results_table(results: list) -> None:
     console.print(table)
 
 
-def print_summary_table(results: list) -> None:
+def print_summary_table(results: list[Any]) -> None:
     """Print aggregated summary table when num_runs > 1.
 
     Groups results by (variant, task) and shows mean, stddev, pass^k.
@@ -137,7 +138,7 @@ def print_summary_table(results: list) -> None:
     console.print(table)
 
 
-def print_cost_estimate(estimates: list[dict]) -> None:
+def print_cost_estimate(estimates: list[dict[str, Any]]) -> None:
     table = Table(title="Cost Estimates (Dry Run)", show_lines=True)
     table.add_column("Benchmark", style="cyan")
     table.add_column("Variants", justify="right")
@@ -160,7 +161,7 @@ def print_cost_estimate(estimates: list[dict]) -> None:
     console.print(table)
 
 
-def print_benchmark_list(benchmarks: list[dict]) -> None:
+def print_benchmark_list(benchmarks: list[dict[str, Any]]) -> None:
     table = Table(title="Available Benchmarks")
     table.add_column("Name", style="cyan")
     table.add_column("Description")

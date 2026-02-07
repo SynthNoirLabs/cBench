@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any, ClassVar
 
 from cbench.client import CallResult
 from cbench.config import ModelID
@@ -18,22 +19,25 @@ class OpenAIClient(ProviderClient):
             import openai
 
             self.client = openai.OpenAI(max_retries=3)
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "openai package required for OpenAI models. "
                 "Install with: pip install 'cbench[openai]' or pip install openai"
-            )
+            ) from err
 
     def call_sync(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
         kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens, effort=effort)
@@ -51,22 +55,25 @@ class OpenAIClient(ProviderClient):
     def call_streaming(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
         kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens, effort=effort)
         kwargs["stream"] = True
         kwargs["stream_options"] = {"include_usage": True}
 
-        text_parts = []
-        ttfb = None
-        usage = None
+        text_parts: list[str] = []
+        ttfb: float | None = None
+        usage: Any = None
         start = time.monotonic()
 
         try:
@@ -102,16 +109,16 @@ class OpenAIClient(ProviderClient):
         )
 
     def _build_messages(
-        self, system: str | list[dict] | None, messages: list[dict]
-    ) -> list[dict]:
-        oai_messages = []
+        self, system: str | list[dict[str, Any]] | None, messages: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        oai_messages: list[dict[str, Any]] = []
         if system is not None:
             if isinstance(system, str):
                 oai_messages.append({"role": "system", "content": system})
-            elif isinstance(system, list):
+            else:
                 # Convert Anthropic-style system blocks to plain string
                 text = " ".join(
-                    b["text"] for b in system if isinstance(b, dict) and "text" in b
+                    b["text"] for b in system if "text" in b
                 )
                 if text:
                     oai_messages.append({"role": "system", "content": text})
@@ -119,7 +126,7 @@ class OpenAIClient(ProviderClient):
         return oai_messages
 
     # Map cBench effort names to OpenAI reasoning_effort values
-    _EFFORT_MAP = {
+    _EFFORT_MAP: ClassVar[dict[str, str]] = {
         "low": "low",
         "medium": "medium",
         "high": "high",
@@ -131,13 +138,13 @@ class OpenAIClient(ProviderClient):
     def _build_kwargs(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         temperature: float | None,
         max_tokens: int,
         *,
         effort: str | None = None,
-    ) -> dict:
-        kwargs: dict = {
+    ) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
             "model": model.value,
             "messages": messages,
             "max_completion_tokens": max_tokens,
@@ -149,7 +156,7 @@ class OpenAIClient(ProviderClient):
         return kwargs
 
     def _parse_response(
-        self, response, model: ModelID, elapsed: float
+        self, response: Any, model: ModelID, elapsed: float
     ) -> CallResult:
         choice = response.choices[0] if response.choices else None
         response_text = choice.message.content or "" if choice else ""

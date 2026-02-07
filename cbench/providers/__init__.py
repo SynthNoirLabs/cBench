@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from cbench.config import ModelID, Provider, PROVIDER_MAP
+from cbench.config import PROVIDER_MAP, ModelID, Provider
 from cbench.providers.base import ProviderClient
 
 

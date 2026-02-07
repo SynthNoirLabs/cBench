@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from cbench.benchmarks.base import Benchmark, BenchmarkResult
 from cbench.client import BenchClient, CallResult
@@ -18,7 +19,7 @@ class BenchmarkRunner:
         self,
         client: BenchClient | ProviderClient | None = None,
         output_dir: str = "results",
-    ):
+    ) -> None:
         self._legacy_client = client if isinstance(client, BenchClient) else None
         self._provider_client = client if isinstance(client, ProviderClient) else None
         self.output_dir = output_dir
@@ -48,6 +49,11 @@ class BenchmarkRunner:
         tasks: list[TaskDefinition],
         num_runs: int = 1,
     ) -> list[BenchmarkResult]:
+        # Use benchmark-specific tasks if provided
+        benchmark_tasks = benchmark.get_tasks()
+        if benchmark_tasks is not None:
+            tasks = benchmark_tasks
+
         variants = benchmark.get_variants()
         total_calls = len(variants) * len(tasks) * num_runs
         results: list[BenchmarkResult] = []
@@ -68,9 +74,19 @@ class BenchmarkRunner:
                 if not is_claude_model(model) and not is_openai_reasoning_model(model):
                     call_kwargs.pop("thinking", None)
                     call_kwargs.pop("effort", None)
+                    call_kwargs.pop("tools", None)
+                    call_kwargs.pop("tool_choice", None)
+                    call_kwargs.pop("betas", None)
                 elif is_openai_reasoning_model(model):
                     # OpenAI reasoning models use effort but not Anthropic-style thinking
                     call_kwargs.pop("thinking", None)
+                    call_kwargs.pop("tools", None)
+                    call_kwargs.pop("tool_choice", None)
+                    call_kwargs.pop("betas", None)
+                elif not is_claude_model(model):
+                    call_kwargs.pop("tools", None)
+                    call_kwargs.pop("tool_choice", None)
+                    call_kwargs.pop("betas", None)
 
                 for task_def in tasks:
                     for run_idx in range(num_runs):
@@ -95,7 +111,9 @@ class BenchmarkRunner:
                         if call_result.error:
                             score = 0.0
                         else:
-                            score = score_response(task_def, call_result.response_text)
+                            score = score_response(
+                                task_def, call_result.response_text, call_result
+                            )
 
                         results.append(
                             BenchmarkResult(
@@ -116,7 +134,12 @@ class BenchmarkRunner:
         return results
 
     @staticmethod
-    def estimate_cost(benchmark: Benchmark, tasks: list[TaskDefinition], num_runs: int) -> dict:
+    def estimate_cost(benchmark: Benchmark, tasks: list[TaskDefinition], num_runs: int) -> dict[str, Any]:
+        # Use benchmark-specific tasks if provided
+        benchmark_tasks = benchmark.get_tasks()
+        if benchmark_tasks is not None:
+            tasks = benchmark_tasks
+
         variants = benchmark.get_variants()
         num_calls = len(variants) * len(tasks) * num_runs
 

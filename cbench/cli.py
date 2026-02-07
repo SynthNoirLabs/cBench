@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from cbench.benchmarks import BENCHMARK_REGISTRY, get_benchmark, list_benchmarks
+from cbench.benchmarks import BENCHMARK_REGISTRY, Benchmark, get_benchmark, list_benchmarks
 from cbench.client import BenchClient
 from cbench.display import (
     confirm_run,
@@ -103,6 +103,24 @@ def main(argv: list[str] | None = None) -> None:
     repair_parser.add_argument("--no-confirm", action="store_true", help="Skip confirmation prompt")
     repair_parser.add_argument("--output-dir", default="results", help="Output directory")
 
+    # compaction
+    compaction_parser = subparsers.add_parser(
+        "compaction", help="Run context compaction benchmark (multi-turn)"
+    )
+    compaction_parser.add_argument("--num-runs", type=int, default=1, help="Runs per variant")
+    compaction_parser.add_argument("--dry-run", action="store_true", help="Estimate cost only")
+    compaction_parser.add_argument("--no-confirm", action="store_true", help="Skip confirmation")
+    compaction_parser.add_argument("--output-dir", default="results", help="Output directory")
+
+    # agent-teams
+    teams_parser = subparsers.add_parser(
+        "agent-teams", help="Run agent teams benchmark (Agent SDK)"
+    )
+    teams_parser.add_argument("--num-runs", type=int, default=1, help="Runs per variant")
+    teams_parser.add_argument("--dry-run", action="store_true", help="Estimate cost only")
+    teams_parser.add_argument("--no-confirm", action="store_true", help="Skip confirmation")
+    teams_parser.add_argument("--output-dir", default="results", help="Output directory")
+
     args = parser.parse_args(argv)
 
     if args.command == "list":
@@ -117,6 +135,10 @@ def main(argv: list[str] | None = None) -> None:
         cmd_review(args)
     elif args.command == "repair":
         cmd_repair(args)
+    elif args.command == "compaction":
+        cmd_compaction(args)
+    elif args.command == "agent-teams":
+        cmd_agent_teams(args)
 
 
 def cmd_list() -> None:
@@ -195,7 +217,7 @@ def cmd_analyze(path: str, fmt: str) -> None:
             console.print(f"[green]Charts saved to {chart_dir}[/green]")
 
 
-def cmd_review(args) -> None:
+def cmd_review(args: argparse.Namespace) -> None:
     from pathlib import Path
 
     import anthropic
@@ -245,7 +267,7 @@ def cmd_review(args) -> None:
     )
 
 
-def cmd_repair(args) -> None:
+def cmd_repair(args: argparse.Namespace) -> None:
     from cbench.repair.benchmark import RepairBenchmark
     from cbench.repair.runner import RepairRunner
 
@@ -273,9 +295,7 @@ def cmd_repair(args) -> None:
 
     # Show cost estimate
     estimate = RepairRunner.estimate_cost(benchmark, args.num_runs, args.max_turns)
-    from cbench.display import print_cost_estimate as _print_est
-
-    console.print(f"\n[bold]Repair Benchmark[/bold]")
+    console.print("\n[bold]Repair Benchmark[/bold]")
     console.print(f"  Fixtures: {len(benchmark.get_fixtures())}")
     console.print(f"  Variants: {len(benchmark.get_variants())}")
     console.print(f"  Runs: {args.num_runs}")
@@ -291,7 +311,7 @@ def cmd_repair(args) -> None:
         return
 
     runner = RepairRunner(args.output_dir)
-    console.print(f"\n[bold cyan]Running code repair benchmark[/bold cyan]")
+    console.print("\n[bold cyan]Running code repair benchmark[/bold cyan]")
     results = runner.run(benchmark, args.num_runs, args.max_turns)
 
     # Display results
@@ -303,7 +323,69 @@ def cmd_repair(args) -> None:
     )
 
 
-def _resolve_benchmarks(names: list[str]) -> list:
+def cmd_compaction(args: argparse.Namespace) -> None:
+    from cbench.benchmarks.compaction import CompactionBenchmark, CompactionRunner
+
+    estimate = CompactionRunner.estimate_cost(args.num_runs)
+
+    console.print("\n[bold]Compaction Benchmark[/bold]")
+    console.print(f"  Variants: {estimate['variants']}")
+    console.print(f"  Facts to recall: {estimate['tasks']}")
+    console.print(f"  Runs: {args.num_runs}")
+    console.print(f"  [yellow]Estimated cost: ${estimate['estimated_cost']:.4f}[/yellow]")
+
+    if args.dry_run:
+        console.print("[yellow]Dry run complete. No API calls made.[/yellow]")
+        return
+
+    if not args.no_confirm and not confirm_run(estimate["estimated_cost"]):
+        console.print("[red]Aborted.[/red]")
+        return
+
+    benchmark = CompactionBenchmark()
+    runner = CompactionRunner(args.output_dir)
+    console.print("\n[bold cyan]Running context compaction benchmark[/bold cyan]")
+    results = runner.run(benchmark, args.num_runs)
+    print_results_table(results)
+    if args.num_runs > 1:
+        print_summary_table(results)
+    console.print(
+        f"\n[bold green]Compaction benchmark complete. Results saved to {args.output_dir}/[/bold green]"
+    )
+
+
+def cmd_agent_teams(args: argparse.Namespace) -> None:
+    from cbench.benchmarks.agent_teams import AgentTeamsBenchmark, AgentTeamsRunner
+
+    estimate = AgentTeamsRunner.estimate_cost(args.num_runs)
+
+    console.print("\n[bold]Agent Teams Benchmark[/bold]")
+    console.print(f"  Variants: {estimate['variants']}")
+    console.print(f"  Tasks: {estimate['tasks']}")
+    console.print(f"  Runs: {args.num_runs}")
+    console.print(f"  [yellow]Estimated cost: ${estimate['estimated_cost']:.4f}[/yellow]")
+
+    if args.dry_run:
+        console.print("[yellow]Dry run complete. No API calls made.[/yellow]")
+        return
+
+    if not args.no_confirm and not confirm_run(estimate["estimated_cost"]):
+        console.print("[red]Aborted.[/red]")
+        return
+
+    benchmark = AgentTeamsBenchmark()
+    runner = AgentTeamsRunner(args.output_dir)
+    console.print("\n[bold cyan]Running agent teams benchmark[/bold cyan]")
+    results = runner.run(benchmark, args.num_runs)
+    print_results_table(results)
+    if args.num_runs > 1:
+        print_summary_table(results)
+    console.print(
+        f"\n[bold green]Agent teams benchmark complete. Results saved to {args.output_dir}/[/bold green]"
+    )
+
+
+def _resolve_benchmarks(names: list[str]) -> list[Benchmark]:
     if "all" in names:
         return list(BENCHMARK_REGISTRY.values())
     return [get_benchmark(name) for name in names]

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from cbench.tasks.api_design import ApiDesignTasks
-from cbench.tasks.base import BenchmarkTask, ScoringMethod, TaskDefinition
+from cbench.tasks.base import BenchmarkTask, TaskDefinition
+from cbench.tasks.base import ScoringMethod as ScoringMethod  # re-export
 from cbench.tasks.code_generation import CodeGenerationTasks
 from cbench.tasks.complex_analysis import ComplexAnalysisTasks
 from cbench.tasks.math_reasoning import MathReasoningTasks

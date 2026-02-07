@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -48,13 +49,13 @@ def filter_records(records: list[Record], min_value: float = 0.0, category: str 
     return result
 
 
-def aggregate_by_category(records: list[Record]) -> dict[str, dict]:
+def aggregate_by_category(records: list[Record]) -> dict[str, dict[str, Any]]:
     """Aggregate records by category.
 
     BUG: count is initialized to 0 but should be 1 for the first record,
     and total doesn't include the first record's value.
     """
-    agg: dict[str, dict] = {}
+    agg: dict[str, dict[str, Any]] = {}
     for r in records:
         if r.category not in agg:
             # BUG: count starts at 0, total starts at 0, then the loop body
@@ -84,7 +85,7 @@ def deduplicate(records: list[Record]) -> list[Record]:
     return list(seen.values())
 
 
-def transform_pipeline(csv_text: str, min_value: float = 0.0, category: str | None = None) -> dict:
+def transform_pipeline(csv_text: str, min_value: float = 0.0, category: str | None = None) -> dict[str, dict[str, Any]]:
     """Full pipeline: parse -> deduplicate -> filter -> aggregate."""
     records = parse_csv(csv_text)
     records = deduplicate(records)

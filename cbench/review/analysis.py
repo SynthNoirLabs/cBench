@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -13,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def generate_review_report(results: list[dict], output_path: str | Path) -> Path:
+def generate_review_report(results: list[dict[str, Any]], output_path: str | Path) -> Path:
     """Generate a markdown report from review results."""
     output_dir = Path(output_path)
     if output_dir.is_file():
@@ -114,7 +115,7 @@ def generate_review_report(results: list[dict], output_path: str | Path) -> Path
     return report_path
 
 
-def generate_review_charts(results: list[dict], output_path: str | Path) -> Path:
+def generate_review_charts(results: list[dict[str, Any]], output_path: str | Path) -> Path:
     """Generate comparison charts from review results."""
     output_dir = Path(output_path)
     if output_dir.is_file():
@@ -134,7 +135,7 @@ def generate_review_charts(results: list[dict], output_path: str | Path) -> Path
     return charts_dir
 
 
-def _score_radar(by_variant: dict, output_dir: Path) -> None:
+def _score_radar(by_variant: dict[str, Any], output_dir: Path) -> None:
     """Radar chart comparing dimension scores across variants."""
     dimensions = ["completeness", "accuracy", "depth", "actionability", "prioritization"]
     n_dims = len(dimensions)
@@ -161,7 +162,7 @@ def _score_radar(by_variant: dict, output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _score_comparison(by_variant: dict, output_dir: Path) -> None:
+def _score_comparison(by_variant: dict[str, Any], output_dir: Path) -> None:
     """Bar chart of composite scores by variant."""
     variants = list(by_variant.keys())
     scores = []
@@ -172,7 +173,7 @@ def _score_comparison(by_variant: dict, output_dir: Path) -> None:
         stds.append(np.std(s))
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    colors = plt.cm.Set2(np.linspace(0, 1, len(variants)))
+    colors = matplotlib.colormaps["Set2"](np.linspace(0, 1, len(variants)))
     ax.bar(variants, scores, yerr=stds, capsize=5, color=colors, alpha=0.85)
     ax.set_ylabel("Composite Score (0-1)")
     ax.set_title("Review Composite Score by Variant")
@@ -183,7 +184,7 @@ def _score_comparison(by_variant: dict, output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _cost_vs_score(by_variant: dict, output_dir: Path) -> None:
+def _cost_vs_score(by_variant: dict[str, Any], output_dir: Path) -> None:
     """Scatter plot: cost vs composite score."""
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -201,7 +202,7 @@ def _cost_vs_score(by_variant: dict, output_dir: Path) -> None:
     plt.close(fig)
 
 
-def _exploration_depth(by_variant: dict, output_dir: Path) -> None:
+def _exploration_depth(by_variant: dict[str, Any], output_dir: Path) -> None:
     """Bar chart of exploration metrics (turns, tool calls, files read) by variant."""
     variants = list(by_variant.keys())
     metric_names = ["total_turns", "tool_calls", "files_read"]
@@ -211,7 +212,7 @@ def _exploration_depth(by_variant: dict, output_dir: Path) -> None:
     width = 0.25
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    for i, (metric, label) in enumerate(zip(metric_names, labels)):
+    for i, (metric, label) in enumerate(zip(metric_names, labels, strict=False)):
         values = []
         for v in variants:
             metrics_list = [r.get("agent_metrics", {}) for r in by_variant[v]]

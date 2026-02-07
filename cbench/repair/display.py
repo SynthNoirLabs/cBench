@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from rich.table import Table
 
 from cbench.display import console
 
 
-def print_repair_results_table(results: list) -> None:
+def print_repair_results_table(results: list[Any]) -> None:
     """Print a Rich table summarizing repair benchmark results."""
     table = Table(title="Code Repair Results", show_lines=True)
     table.add_column("Variant", style="cyan")

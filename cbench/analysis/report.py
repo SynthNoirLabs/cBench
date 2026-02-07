@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 
-def generate_report(results: list[dict], output_path: str | Path) -> Path:
+def generate_report(results: list[dict[str, Any]], output_path: str | Path) -> Path:
     output_dir = Path(output_path)
     if output_dir.is_file():
         output_dir = output_dir.parent

@@ -32,17 +32,66 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
-ignore = ["E501"]  # line length handled by formatter
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "ANN"]
+ignore = ["E501", "ANN401"]  # E501: line length handled by formatter; ANN401: allow Any
+
+[tool.ruff.lint.per-file-ignores]
+"cbench/repair/fixtures/**" = ["ANN", "B011", "RUF015", "SIM102"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["cbench"]
 
 [tool.pyright]
 pythonVersion = "3.11"
-typeCheckingMode = "basic"
+typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
+# Downgrade external-lib noise to warnings (strict still enforces our annotations)
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownParameterType = "warning"
+reportMissingTypeStubs = "warning"
+reportMissingImports = "warning"
+reportAttributeAccessIssue = "warning"
+reportPrivateUsage = "warning"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["cbench/repair/fixtures/"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+    "anthropic.*",
+    "openai.*",
+    "google.*",
+    "google.genai.*",
+    "claude_agent_sdk.*",
+    "rich.*",
+    "matplotlib.*",
+    "numpy.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "cbench.repair.fixtures.*",
+    "cbench.repair.fixtures.*.*",
+    "handler",
+    "calculator",
+    "pipeline",
+]
+disallow_untyped_defs = false
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

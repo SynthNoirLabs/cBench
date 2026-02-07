@@ -1,6 +1,6 @@
 """Tests for the API handler."""
 
-from handler import Request, Response, handle_request, reset_store
+from handler import Request, handle_request, reset_store
 
 
 def setup_function():

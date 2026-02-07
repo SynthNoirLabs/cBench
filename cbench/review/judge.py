@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 import anthropic
 
@@ -162,7 +163,7 @@ class JudgeScorer:
             blocks.append(match.group(0))
         return blocks
 
-    def _build_scores(self, data: dict) -> JudgeScores:
+    def _build_scores(self, data: dict[str, Any]) -> JudgeScores:
         """Build JudgeScores from parsed JSON data."""
         raw = {}
         normalized = {}

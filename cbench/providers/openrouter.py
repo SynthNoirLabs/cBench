@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import os
 import time
+from typing import Any
 
 from cbench.client import CallResult
 from cbench.config import ModelID
 from cbench.metrics import calculate_cost
 from cbench.providers.base import ProviderClient
-
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
@@ -27,22 +27,25 @@ class OpenRouterClient(ProviderClient):
                 api_key=api_key,
                 max_retries=3,
             )
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "openai package required for OpenRouter models. "
                 "Install with: pip install 'cbench[openai]' or pip install openai"
-            )
+            ) from err
 
     def call_sync(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
         kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens)
@@ -60,20 +63,23 @@ class OpenRouterClient(ProviderClient):
     def call_streaming(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         *,
-        system: str | list[dict] | None = None,
-        thinking: dict | None = None,
+        system: str | list[dict[str, Any]] | None = None,
+        thinking: dict[str, Any] | None = None,
         effort: str | None = None,
         temperature: float | None = None,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        betas: list[str] | None = None,
     ) -> CallResult:
         oai_messages = self._build_messages(system, messages)
         kwargs = self._build_kwargs(model, oai_messages, temperature, max_tokens)
         kwargs["stream"] = True
 
-        text_parts = []
-        ttfb = None
+        text_parts: list[str] = []
+        ttfb: float | None = None
         start = time.monotonic()
         input_tokens = 0
         output_tokens = 0
@@ -109,15 +115,15 @@ class OpenRouterClient(ProviderClient):
         )
 
     def _build_messages(
-        self, system: str | list[dict] | None, messages: list[dict]
-    ) -> list[dict]:
-        oai_messages = []
+        self, system: str | list[dict[str, Any]] | None, messages: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        oai_messages: list[dict[str, Any]] = []
         if system is not None:
             if isinstance(system, str):
                 oai_messages.append({"role": "system", "content": system})
-            elif isinstance(system, list):
+            else:
                 text = " ".join(
-                    b["text"] for b in system if isinstance(b, dict) and "text" in b
+                    b["text"] for b in system if "text" in b
                 )
                 if text:
                     oai_messages.append({"role": "system", "content": text})
@@ -127,11 +133,11 @@ class OpenRouterClient(ProviderClient):
     def _build_kwargs(
         self,
         model: ModelID,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         temperature: float | None,
         max_tokens: int,
-    ) -> dict:
-        kwargs: dict = {
+    ) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
             "model": model.value,
             "messages": messages,
             "max_completion_tokens": max_tokens,
@@ -141,7 +147,7 @@ class OpenRouterClient(ProviderClient):
         return kwargs
 
     def _parse_response(
-        self, response, model: ModelID, elapsed: float
+        self, response: Any, model: ModelID, elapsed: float
     ) -> CallResult:
         choice = response.choices[0] if response.choices else None
         response_text = choice.message.content or "" if choice else ""
